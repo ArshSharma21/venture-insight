@@ -1,4 +1,4 @@
-"""Local Venture Insight dashboard and data API (Python standard library only)."""
+"""Local Venture Insight dashboard and data API."""
 from __future__ import annotations
 
 import csv
@@ -11,6 +11,13 @@ from datetime import datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
+
+try:
+    from ml.pipeline import load_bundle, load_metrics, recommend as content_recommend
+except ImportError:  # The dashboard still runs before optional ML dependencies are installed.
+    load_bundle = lambda: None
+    load_metrics = lambda: {"status": "not_trained", "message": "Install requirements and train the classifier to enable ML."}
+    content_recommend = None
 
 ROOT = Path(__file__).resolve().parent
 RAW = ROOT / "data" / "raw"
@@ -98,7 +105,7 @@ if WIKIDATA_FINANCIALS_PATH.exists():
 
 
 def classify_idea(text: str) -> list[dict]:
-    """Transparent keyword classifier for a project demo; labels are rule-based."""
+    """Transparent keyword baseline; scores are rule signals, not probabilities."""
     rules = {
         "Financial Technology": ["payment", "bank", "credit", "loan", "finance", "fintech", "insurance", "wallet", "invest"],
         "Healthcare": ["health", "medical", "doctor", "clinic", "patient", "diagnosis", "medicine", "pharma"],
@@ -120,10 +127,40 @@ def classify_idea(text: str) -> list[dict]:
     if not scores:
         return []
     total = sum(score for _, score in scores)
-    return [{"label": label, "confidence": round(score / total, 2)} for label, score in sorted(scores, key=lambda item: (-item[1], item[0]))[:3]]
+    return [{"label": label, "signal": round(score / total, 2)} for label, score in sorted(scores, key=lambda item: (-item[1], item[0]))[:3]]
+
+
+def idea_records() -> list[dict]:
+    """Build a unified retrieval corpus with source fields retained on each record."""
+    records = []
+    for item in funding:
+        record = dict(item)
+        record["recordType"] = "startup funding"
+        records.append(record)
+    for item in companies:
+        record = dict(item)
+        record["recordType"] = "public company"
+        record["companyProfile"] = wikidata_profiles.get(item["name"].casefold())
+        if record["companyProfile"]:
+            record["historicalFacts"] = wikidata_financials.get(record["companyProfile"]["wikidataId"], [])
+        records.append(record)
+    return records
+
+
+_RETRIEVAL_RECORDS = None
 
 
 def idea_matches(query: str, limit: int = 12) -> list[dict]:
+    """Content-based TF-IDF cosine recommendations, with legacy fallback."""
+    global _RETRIEVAL_RECORDS
+    if content_recommend:
+        if _RETRIEVAL_RECORDS is None:
+            _RETRIEVAL_RECORDS = idea_records()
+        return content_recommend(query, _RETRIEVAL_RECORDS, limit)
+    return _legacy_idea_matches(query, limit)
+
+
+def _legacy_idea_matches(query: str, limit: int = 12) -> list[dict]:
     q = set(tokens(query))
     if not q:
         return []
@@ -182,6 +219,21 @@ def idea_matches(query: str, limit: int = 12) -> list[dict]:
     return result
 
 
+CLASSIFIER_BUNDLE = load_bundle()
+
+
+def ml_classify(text: str) -> list[dict]:
+    if not text.strip() or not CLASSIFIER_BUNDLE:
+        return []
+    model = CLASSIFIER_BUNDLE["pipeline"]
+    classes = model.classes_
+    if hasattr(model, "predict_proba"):
+        values = model.predict_proba([text])[0]
+    else:
+        values = model.decision_function([text])[0]
+    return [{"label": str(classes[i]), "score": round(float(values[i]), 4), "scoreType": "model score"} for i in values.argsort()[::-1][:3]]
+
+
 def overview() -> dict:
     industries = Counter(c["industry"] for c in companies)
     countries = Counter(c["location"].split(",")[-1].strip() for c in companies)
@@ -215,6 +267,8 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         params = parse_qs(parsed.query)
+        if parsed.path == "/api/model":
+            return self.send_json({"metrics": load_metrics(), "activeModel": CLASSIFIER_BUNDLE.get("name") if CLASSIFIER_BUNDLE else None, "mlAvailable": bool(CLASSIFIER_BUNDLE)})
         if parsed.path == "/api/overview":
             return self.send_json(overview())
         if parsed.path == "/api/companies":
@@ -236,7 +290,17 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(found or {"error": "Company not found in this source."}, 200 if found else 404)
         if parsed.path == "/api/idea":
             query = params.get("q", [""])[0][:240]
-            return self.send_json({"query": query, "classifications": classify_idea(query), "matches": idea_matches(query), "modelNote": "Transparent rule-based sector classification and keyword similarity; research aid only."})
+            method = params.get("method", ["ml"])[0]
+            use_ml = method != "rules" and bool(CLASSIFIER_BUNDLE)
+            classifications = ml_classify(query) if use_ml else classify_idea(query)
+            matches = idea_matches(query)
+            return self.send_json({
+                "query": query, "method": "ml" if use_ml else "rules",
+                "classifierName": CLASSIFIER_BUNDLE["name"] if use_ml else "Keyword rules (baseline)",
+                "classifications": classifications, "ruleBaseline": classify_idea(query), "matches": matches,
+                "recommendationMethod": "TF-IDF cosine similarity" if content_recommend else "Keyword overlap fallback",
+                "modelNote": ("ML sector classifier trained on source taxonomy weak labels; model scores are not commercial-success probabilities." if use_ml else "Keyword rules baseline. Install dependencies and train to enable the ML classifier."),
+            })
         if parsed.path == "/api/funding":
             term = params.get("q", [""])[0].lower()
             sector = params.get("industry", [""])[0]
