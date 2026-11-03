@@ -106,5 +106,8 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 
 - Project name: Venture Insight.
 - Repository: `ArshSharma21/venture-insight` (private).
-- Initial market, industries, data source, and framework: not yet confirmed.
+- Initial market: India and global markets.
+- Initial industry coverage: all industries.
+- Data source and framework: not yet confirmed.
+- Exact syllabus: requested from the user; mapping remains provisional until received.
 - Initial repository state: no dataset or application code existed in the workspace.
