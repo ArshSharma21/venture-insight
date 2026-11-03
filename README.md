@@ -19,7 +19,7 @@ The project brief calls for a working local web application backed by reproducib
 7. **Integrate and validate** — connect real processed data and model outputs to the interface; check source attribution and missing-data behavior.
 8. **Run locally** — provide reproducible setup instructions and demonstrate the complete application on localhost.
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for phase gates and [docs/SYLLABUS_MAPPING.md](docs/SYLLABUS_MAPPING.md) for the current mapping of course topics to project work.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for phase gates, [`docs/SYLLABUS_MAPPING.md`](docs/SYLLABUS_MAPPING.md) for the provisional course-topic mapping, and [`docs/DATA_SOURCE_RESEARCH.md`](docs/DATA_SOURCE_RESEARCH.md) for initial source candidates and limits.
 
 ## Proposed technical direction
 
