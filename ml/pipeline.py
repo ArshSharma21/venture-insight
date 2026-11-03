@@ -42,19 +42,32 @@ def canonical_sector(value: str) -> str:
     return best[1] if best[0] else "Other / Unclassified"
 
 
-def build_corpus(companies: list[dict], funding: list[dict], profiles: dict[str, dict]) -> list[dict]:
-    """Build one document per public company or unique startup; exclude label fields from text."""
+def build_corpus(companies: list[dict], funding: list[dict], profiles: dict[str, dict], global_startups: list[dict] | None = None) -> list[dict]:
+    """Build one document per normalized company name; exclude label fields from text.
+
+    Cross-source name deduplication reduces train/test leakage when the same entity
+    appears in the public-company snapshot and a startup funding catalog. Exact
+    name matching is conservative: aliases and transliterations can still remain.
+    """
     rows: list[dict] = []
+    seen: set[str] = set()
+
+    def name_key(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "", (value or "").casefold())
+
     for company in companies:
+        key = name_key(company.get("name", ""))
+        if not key or key in seen:
+            continue
+        seen.add(key)
         profile = profiles.get(company["name"].casefold(), {})
         label = canonical_sector(company.get("industry", ""))
         description = profile.get("description", "")
         text = " ".join(filter(None, (company.get("name"), description, profile.get("industry", ""))))
         if text.strip():
             rows.append({"text": text, "label": label, "name": company["name"], "source": company.get("source", "public company")})
-    seen: set[str] = set()
     for startup in funding:
-        key = re.sub(r"[^a-z0-9]+", "", startup.get("name", "").lower())
+        key = name_key(startup.get("name", ""))
         if not key or key in seen:
             continue
         seen.add(key)
@@ -63,6 +76,16 @@ def build_corpus(companies: list[dict], funding: list[dict], profiles: dict[str,
         text = " ".join(filter(None, (startup.get("name"), startup.get("subIndustry"), startup.get("remarks"))))
         if text.strip():
             rows.append({"text": text, "label": label, "name": startup["name"], "source": startup.get("source", "startup funding")})
+    for startup in global_startups or []:
+        key = name_key(startup.get("name", ""))
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        # Use the sector as a weak target only; keep it out of model text to avoid label leakage.
+        label = canonical_sector(startup.get("industry", ""))
+        text = str(startup.get("modelText") or startup.get("name", ""))
+        if text.strip():
+            rows.append({"text": text, "label": label, "name": startup["name"], "source": startup.get("source", "global startup funding")})
     return rows
 
 
@@ -89,7 +112,7 @@ def recommend(query: str, records: list[dict], limit: int = 12) -> list[dict]:
     docs = []
     for record in records:
         profile = record.get("companyProfile") or {}
-        docs.append(" ".join(str(record.get(k, "") or "") for k in ("name", "industry", "subIndustry", "remarks", "round")) + " " + str(profile.get("description", "")))
+        docs.append(str(record.get("recommendationText") or " ".join(str(record.get(k, "") or "") for k in ("name", "industry", "subIndustry", "remarks", "round"))) + " " + str(profile.get("description", "")))
     if not docs or not query.strip():
         return []
     vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words="english", min_df=1, sublinear_tf=True)
@@ -102,6 +125,7 @@ def recommend(query: str, records: list[dict], limit: int = 12) -> list[dict]:
             break
         record = dict(records[int(idx)])
         record["matchScore"] = round(float(scores[idx]), 3)
+        record["matchPercent"] = round(float(scores[idx]) * 100, 1)
         record["matchMethod"] = "TF-IDF cosine similarity"
         result.append(record)
     return result

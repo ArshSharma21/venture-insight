@@ -21,7 +21,7 @@ from ml.pipeline import MODEL_PATH, METRICS_PATH, build_corpus  # noqa: E402
 
 
 def main() -> None:
-    rows = build_corpus(app.companies, app.funding, app.wikidata_profiles)
+    rows = build_corpus(app.companies, app.funding, app.wikidata_profiles, app.global_startup_companies)
     counts = Counter(row["label"] for row in rows)
     # Very small categories cannot support a stratified holdout and useful evaluation.
     rows = [row for row in rows if counts[row["label"]] >= 5]
@@ -60,7 +60,7 @@ def main() -> None:
     results.insert(0, baseline)
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump({"pipeline": best["pipeline"], "name": best["name"], "labels": sorted(set(labels))}, MODEL_PATH)
-    payload = {"status": "trained", "bestModel": best["name"], "selectionMetric": "validation macro-F1", "validation": {"fraction": 0.2, "seed": 43, "records": len(validation_y)}, "holdout": {"fraction": 0.2, "seed": 42, "records": len(test_y)}, "corpus": {"records": len(rows), "trainingRecords": len(development_y), "labels": dict(sorted(Counter(labels).items())), "labelType": "weak labels mapped from Forbes industries and startup funding verticals"}, "algorithms": results, "caveat": "Test scores measure agreement with mapped source taxonomy on an untouched stratified holdout. They do not establish true sector fit, idea originality, or commercial success. Model scores are not success probabilities."}
+    payload = {"status": "trained", "bestModel": best["name"], "selectionMetric": "validation macro-F1", "validation": {"fraction": 0.2, "seed": 43, "records": len(validation_y)}, "holdout": {"fraction": 0.2, "seed": 42, "records": len(test_y)}, "corpus": {"records": len(rows), "trainingRecords": len(development_y), "sourceCounts": dict(sorted(Counter(row["source"] for row in rows).items())), "labels": dict(sorted(Counter(labels).items())), "labelType": "weak labels mapped from Forbes industries, Indian funding verticals, and global funding sectors"}, "algorithms": results, "caveat": "Test scores measure agreement with mapped source taxonomy on an untouched stratified holdout. They do not establish true sector fit, idea originality, or commercial success. Model scores are not success probabilities."}
     METRICS_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(json.dumps({"status": payload["status"], "records": len(rows), "holdout": len(test_y), "bestModel": payload["bestModel"], "algorithms": [{"name": a["name"], "accuracy": a["accuracy"], "macroF1": a["macroF1"]} for a in results]}, indent=2))
 

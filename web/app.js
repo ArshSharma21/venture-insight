@@ -64,22 +64,25 @@ async function loadCompanies() {
   clearTimeout(searchTimer); searchTimer = setTimeout(() => { companyPage = 0; loadCompanies(); }, 180);
 }));
 
-function renderFunding(rows, total, page, size) {
+function renderFunding(rows, total, page, size, scope, indiaRounds, globalRounds, withAmount) {
   $('#funding-count').textContent = `${fmtN(total)} records`;
   $('#funding-total').textContent = fmtN(total);
-  $('#funding-rows').innerHTML = rows.length ? rows.map(r => `<tr><td>${esc(r.name || 'Unnamed startup')}</td><td>${esc(r.industry || 'Not specified')}${r.subIndustry ? `<div class="leader-meta">${esc(r.subIndustry)}</div>` : ''}</td><td>${esc(r.location || '—')}</td><td>${esc(r.date || '—')}</td><td>${esc(r.round || 'Not specified')}</td><td>${cash(r.amount)}</td><td>${esc(r.investors || 'Not disclosed')}</td></tr>`).join('') : '<tr><td colspan="7" class="empty">No funding records match those filters.</td></tr>';
+  $('#funding-known').textContent = fmtN(withAmount);
+  $('#funding-period').textContent = scope === 'india' ? '2015–2020' : scope === 'global' ? '2019–Jun 2026' : '2015–Jun 2026';
+  $('#funding-coverage').textContent = scope === 'india' ? 'India' : scope === 'global' ? `${fmtN(globalRounds)} sample rounds` : `India + ${fmtN(globalRounds)} global sample rounds`;
+  $('#funding-rows').innerHTML = rows.length ? rows.map(r => `<tr><td>${esc(r.name || 'Unnamed startup')}</td><td>${esc(r.industry || 'Not specified')}${r.subIndustry ? `<div class="leader-meta">${esc(r.subIndustry)}</div>` : ''}</td><td>${esc(r.location || '—')}</td><td>${esc(r.date || '—')}</td><td>${esc(r.round || 'Not specified')}</td><td>${cash(r.amount)}${r.amountStatus && r.market === 'Global' ? `<div class="leader-meta">${esc(r.amountStatus)}</div>` : ''}</td><td>${esc(r.investors || 'Not disclosed')}</td><td>${r.sourceUrl?.startsWith('https://') ? `<a href="${esc(r.sourceUrl)}" target="_blank" rel="noreferrer">${esc(r.market)} source ↗</a>` : esc(r.source || 'Source not recorded')}<small>${esc(r.newsSource || r.source || '')}</small></td></tr>`).join('') : '<tr><td colspan="8" class="empty">No funding records match those filters.</td></tr>';
   renderPager($('#funding-pager'), page, total, size, p => { fundingPage = p; loadFunding(); });
 }
 async function loadFunding() {
-  const p = new URLSearchParams({ q: $('#funding-search').value, industry: $('#funding-industry').value, page: fundingPage });
+  const p = new URLSearchParams({ q: $('#funding-search').value, industry: $('#funding-industry').value, scope: $('#funding-scope').value, page: fundingPage });
   const d = await get(`/api/funding?${p}`);
   if (!$('#funding-industry').dataset.ready) {
     d.industries.forEach(v => $('#funding-industry').insertAdjacentHTML('beforeend', `<option>${esc(v)}</option>`));
     $('#funding-industry').dataset.ready = '1';
   }
-  renderFunding(d.rows, d.total, d.page, d.pageSize);
+  renderFunding(d.rows, d.total, d.page, d.pageSize, d.scope, d.indiaRounds, d.globalRounds, d.withAmount);
 }
-['funding-search', 'funding-industry'].forEach(id => $('#' + id).addEventListener(id === 'funding-search' ? 'input' : 'change', () => {
+['funding-search', 'funding-industry', 'funding-scope'].forEach(id => $('#' + id).addEventListener(id === 'funding-search' ? 'input' : 'change', () => {
   clearTimeout(searchTimer); searchTimer = setTimeout(() => { fundingPage = 0; loadFunding(); }, 180);
 }));
 
@@ -94,9 +97,16 @@ $('#analyze-btn').addEventListener('click', async () => {
     const chips = renderChips(d.classifications);
     const comparingRules = d.method === 'ml';
     const comparison = renderChips(comparingRules ? d.ruleBaseline : d.mlComparison);
-    const cards = d.matches.length ? d.matches.map(m => `<article class="match-card" ${m.recordType === 'public company' ? `data-company="${esc(m.name)}"` : ''}><div class="match-type">${esc(m.recordType)} · ${m.recordType === 'public company' ? 'Global 2000 rank #' + m.rank : esc(m.round || 'Funding record')}</div><h3>${esc(m.name || 'Unnamed company')}</h3><p>${esc(m.industry || 'Industry not specified')}${m.subIndustry ? ` · ${esc(m.subIndustry)}` : ''} · ${esc(m.location || 'Location not specified')}</p>${m.companyProfile?.description ? `<div class="match-detail">${esc(m.companyProfile.description)}</div>` : ''}<div class="match-detail">${m.recordType === 'public company' ? `Sales ${moneyB(m.sales)} · Profit / (loss) ${moneyB(m.profit)} · Margin ${m.profitMargin == null ? 'Not available' : `${m.profitMargin}%`} · Assets ${moneyB(m.assets)} · Market value ${moneyB(m.marketValue)}` : `Funding ${cash(m.amount)} · ${esc(m.date || 'Date not recorded')} · ${esc(m.investors || 'Investors not listed')} · ${esc(m.remarks || 'No remarks in source')}`}</div><div class="match-tags"><span>TF-IDF cosine: ${Math.round(m.matchScore * 100)}%</span><span>retrieval: similar text</span>${m.recordType === 'public company' ? '<span>click for full profile and source data</span>' : ''}</div></article>`).join('') : '<div class="empty">No similar text was found in the available source records. Try adding a customer, product, and problem description.</div>';
-    $('#idea-results').innerHTML = `<div class="result-head"><div><div class="eyebrow">YOUR MARKET MAP · ${esc(d.classifierName)}</div><h2>Companies and records to investigate</h2></div><span class="result-count">Top ${d.matches.length} similar records · not verified competitors</span></div><div class="classifier-results"><div class="eyebrow">${d.method === 'ml' ? 'SUPERVISED CLASSIFIER OUTPUT' : 'SELECTED CLASSIFIER OUTPUT'}</div><div class="classification-row">${chips}</div><div class="eyebrow">${comparingRules ? 'KEYWORD RULE BASELINE · COMPARISON' : 'SUPERVISED CLASSIFIER · COMPARISON'}</div><div class="classification-row">${comparison}</div></div><div class="match-grid">${cards}</div><div class="notice slim">${esc(d.modelNote)} Model scores rank sectors; rule signals count matched keyword rules. Recommendations are produced separately by ${esc(d.recommendationMethod)}. Similarity does not establish direct competition. Financial figures retain their source and period.</div>`;
-    $$('.match-card[data-company]').forEach(el => el.addEventListener('click', async () => openCompany(await get(`/api/company?name=${encodeURIComponent(el.dataset.company)}`))));
+    const sourceLink = m => m.sourceUrl && m.sourceUrl.startsWith('https://') ? `<a href="${esc(m.sourceUrl)}" target="_blank" rel="noreferrer">Open source ↗</a>` : esc(m.source || 'Source not recorded');
+    const scoreCell = m => `<td class="recommendation-percent"><strong>${Number(m.matchPercent ?? m.matchScore * 100).toFixed(1)}%</strong><div class="similarity-track"><i style="width:${Math.max(0, Math.min(100, m.matchPercent ?? m.matchScore * 100))}%"></i></div><small>text similarity</small></td>`;
+    const startupRows = d.startupMatches.map(m => `<tr><td><strong>${esc(m.name)}</strong><small>${esc(m.recordType === 'global startup' ? 'Global startup' : 'India startup')}</small>${m.contextSnippet ? `<p class="recommendation-context">${esc(m.contextSnippet.slice(0, 200))}${m.contextSnippet.length > 200 ? '…' : ''}</p>` : ''}</td>${scoreCell(m)}<td>${esc(m.industry || 'Sector not recorded')}<small>${esc(m.location || 'Location not recorded')}${m.foundedYear ? ` · Founded ${m.foundedYear}` : ''}</small></td><td>${esc(m.round || 'Round not recorded')}<small>${esc(m.date || 'Date not recorded')}${m.amount != null ? ` · ${cash(m.amount)}` : ''}${m.roundCount ? ` · ${m.roundCount} source rounds` : ''}</small></td><td>${sourceLink(m)}<small>${esc(m.newsSource ? `News source: ${m.newsSource}` : m.source || '')}</small></td></tr>`).join('');
+    const startupTable = startupRows ? `<div class="table-wrap recommendation-wrap"><table class="recommendation-table"><thead><tr><th>RECOMMENDED STARTUP</th><th>MATCH TO YOUR DESCRIPTION</th><th>SECTOR / MARKET</th><th>LATEST FUNDING SIGNAL</th><th>SOURCE</th></tr></thead><tbody>${startupRows}</tbody></table></div>` : '<div class="empty">No startup text matched this description in the downloaded source snapshot. Try adding a product, customer, or problem detail.</div>';
+    const companyRows = d.companyMatches.map(m => `<tr class="company-recommendation" data-company="${esc(m.name)}"><td><strong>${esc(m.name)}</strong><small>Established public company · Global 2000</small>${m.companyProfile?.description ? `<p class="recommendation-context">${esc(m.companyProfile.description)}</p>` : ''}</td>${scoreCell(m)}<td>${esc(m.industry)}<small>${esc(m.location)}</small></td><td>Sales ${moneyB(m.sales)}<small>Profit / (loss) ${moneyB(m.profit)} · USD billions</small></td><td>${sourceLink(m)}<small>click row for full profile</small></td></tr>`).join('');
+    const companyTable = companyRows ? `<div class="table-wrap recommendation-wrap"><table class="recommendation-table"><thead><tr><th>PUBLIC COMPANY COMPARATOR</th><th>MATCH TO YOUR DESCRIPTION</th><th>INDUSTRY / HQ</th><th>FINANCIAL SNAPSHOT</th><th>SOURCE</th></tr></thead><tbody>${companyRows}</tbody></table></div>` : '<div class="empty">No public-company text match was found in the current dataset.</div>';
+    const catalog = d.catalog || {};
+    const classifierLabel = d.catalog?.globalStartupProfiles ? `${fmtN(catalog.startupProfiles)} startup profiles searched, including ${fmtN(catalog.globalStartupProfiles)} profiles from the global funding sample` : 'Global startup sample not downloaded; only available local profiles can be searched';
+    $('#idea-results').innerHTML = `<div class="result-head"><div><div class="eyebrow">YOUR MARKET MAP · ${esc(d.classifierName)}</div><h2>Startup recommendations</h2></div><span class="result-count">${d.startupMatches.length} results · ${esc(classifierLabel)}</span></div><div class="classifier-results"><div class="eyebrow">${d.method === 'ml' ? 'SUPERVISED CLASSIFIER OUTPUT' : 'SELECTED CLASSIFIER OUTPUT'}</div><div class="classification-row">${chips}</div><div class="eyebrow">${comparingRules ? 'KEYWORD RULE BASELINE · COMPARISON' : 'SUPERVISED CLASSIFIER · COMPARISON'}</div><div class="classification-row">${comparison}</div></div><h3 class="recommendation-heading">Startup recommendations · ranked by description similarity</h3>${startupTable}<h3 class="recommendation-heading">Established public-company comparators</h3>${companyTable}<div class="notice slim">${esc(d.modelNote)} Each match percentage is TF-IDF cosine text similarity scaled from 0–100, not a probability that the startup matches, succeeds, or competes directly. Global company descriptions are represented by funding-news excerpts where available. Funding amounts appear only when the source marks them verified; open the linked source to inspect context.</div>`;
+    $$('.company-recommendation[data-company]').forEach(el => el.addEventListener('click', async () => openCompany(await get(`/api/company?name=${encodeURIComponent(el.dataset.company)}`))));
   } catch (e) { $('#idea-results').innerHTML = `<div class="notice">${esc(e.message)}</div>`; }
   finally { btn.disabled = false; btn.innerHTML = 'Explore market <span>↗</span>'; }
 });
@@ -107,7 +117,7 @@ async function init() {
     $('#stat-companies').textContent = fmtN(d.companyCount);
     $('#stat-countries').textContent = fmtN(d.globalCountries);
     $('#stat-industries').textContent = fmtN(d.industries);
-    $('#stat-rounds').textContent = fmtN(d.startupRounds);
+    $('#stat-rounds').textContent = fmtN(d.globalStartupProfiles);
     $('#stat-sales').textContent = billions(d.totalSales);
     $('#funding-known').textContent = fmtN(d.fundingWithAmount);
     renderSectors(d.topSectors); renderLeaders(d.topCompanies); loadCompanies(); loadFunding();
@@ -127,7 +137,8 @@ async function loadModelComparison() {
       return;
     }
     const score = x => x == null ? '—' : `${(x * 100).toFixed(1)}%`;
-    panel.innerHTML = `<div class="panel-head"><div><h3>Classifier comparison</h3><p>Final test: ${metrics.holdout.records} records · winner selected on validation macro-F1</p></div><span class="result-count">Active: ${esc(activeModel)}</span></div><div class="model-rows">${rows.map(row => `<div class="model-row"><strong>${esc(row.name)}</strong><span>Accuracy ${score(row.accuracy)}</span><span>Macro-F1 ${score(row.macroF1)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, Math.min(100, (row.macroF1 || row.accuracy || 0) * 100))}%"></div></div></div>`).join('')}</div><p class="model-caveat">${esc(metrics.caveat || '')} Corpus: ${metrics.corpus.records} records; labels are mapped from source industry categories.</p>`;
+    const sourceSummary = Object.entries(metrics.corpus.sourceCounts || {}).map(([name, count]) => `${fmtN(count)} ${name}`).join(' · ');
+    panel.innerHTML = `<div class="panel-head"><div><h3>Classifier comparison</h3><p>Final test: ${metrics.holdout.records} records · winner selected on validation macro-F1</p></div><span class="result-count">Active: ${esc(activeModel)}</span></div><div class="model-rows">${rows.map(row => `<div class="model-row"><strong>${esc(row.name)}</strong><span>Accuracy ${score(row.accuracy)}</span><span>Macro-F1 ${score(row.macroF1)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, Math.min(100, (row.macroF1 || row.accuracy || 0) * 100))}%"></div></div></div>`).join('')}</div><p class="model-caveat">${esc(metrics.caveat || '')} Corpus: ${fmtN(metrics.corpus.records)} weak-labeled records. Sources: ${esc(sourceSummary)}.</p>`;
   } catch (e) { $('#model-comparison').innerHTML = `<div class="notice">Could not load classifier metrics: ${esc(e.message)}</div>`; }
 }
 init();

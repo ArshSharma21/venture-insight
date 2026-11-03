@@ -1,39 +1,33 @@
-# Data Source Research — Candidate Inventory
+# Data Source Research and Audit
 
-**Research date:** 2026-11-03  
-**Status:** two Kaggle datasets plus two Wikidata-derived company enrichment files are integrated. SEC access was researched, but automated requests from this environment are presently refused.
+**Audit date:** 2026-11-03
+**Purpose:** choose source-bounded startup records for idea search while keeping licenses, event/profile distinctions, and coverage limits visible.
 
-## Confirmed project scope
+## Integrated datasets
 
-- Geography: India and global markets.
-- Industries: all industries.
-- Company types: startups and established large public companies.
-- Preferred data platform: Kaggle/open datasets, as described by the user.
-- Syllabus material: not required for current delivery, at the user's direction.
-
-## Candidate source matrix
-
-| Source | Potential use | Coverage and limits | Due diligence before use |
+| Source | What is present | Rights and coverage | Treatment |
 | --- | --- | --- | --- |
-| [Kaggle — Forbes Global 2000 Companies 2025](https://www.kaggle.com/datasets/ellimaaac/forbes-the-global-2000-companies-2025) | Broad profile and financial comparison of established large public companies worldwide | 2,000 companies across countries and industries. Fields: rank, company, headquarters, industry, sales, profit, assets, and market value, in USD billions. Kaggle listing says CC0 Public Domain. A latest-12-month snapshot available as of 25 Apr 2025, not a financial time series; industry is not a full business description. CSV uses semicolon delimiters. | Downloaded on 3 Nov 2026, schema inspected, integrated in `app.py`; see `data/README.md` |
-| [Kaggle — Indian Startup Funding](https://www.kaggle.com/datasets/sudalairajkumar/indian-startup-funding) | India startup discovery, sector trends, funding history, investors, and classification labels | 3,044 funding records; fields include date, startup, vertical/sub-vertical, city, investors, investment type, amount, and remarks. Historical funding data, not company revenue/profit or full business descriptions. Kaggle metadata lists CC0 Public Domain; records span 2015–2020 and contain missing fields. | Downloaded on 3 Nov 2026, schema inspected, integrated in `app.py`; see `data/README.md` |
-| [Kaggle — Forbes Global 2000 Companies 2026](https://www.kaggle.com/datasets/ellimaaac/forbes-the-global-2000-companies-2026) | Newer broad public-company snapshot | 2,000 companies with the same core fields, latest 12 months available as of 15 May 2026. Kaggle lists “Other (specified in description)” and links to a Forbes permissions request. | Reviewed on 3 Nov 2026, not downloaded or included; use only after terms are clarified |
-| [Wikidata Query Service](https://query.wikidata.org/) | Supplemental global company descriptions and dated reported financial claims | Exact English-name matching found 1,275 candidate profiles out of the 2,000 Forbes names. Available fields vary; claims are community-maintained and may be missing or ambiguous. The profile query exposes description, website, founding date, industry, headquarters, country, and employee facts. A second query captures dated revenue, net profit, assets, and liabilities only when a currency/unit is supplied. | Integrated as supplemental candidate data in `data/wikidata_company_profiles.json` and `data/wikidata_financial_facts.json`; identity and claims link back to Wikidata. |
-| [SEC EDGAR APIs](https://www.sec.gov/search-filings/edgar-application-programming-interfaces) | Multi-year U.S. company filings and XBRL facts | Official API provides submissions, company facts, and bulk archives; no API key is required. Facts cover SEC filers and can contain periods, taxonomy differences, and restatements. | Public API researched; requests from this environment were rejected by SEC as an undeclared automated tool, even after adding the user-approved contact. No SEC facts were copied into the project. |
-| [Kaggle — LinkedIn Job Postings (2023–2024)](https://www.kaggle.com/dsv/9200871) | Company descriptions, industry, headquarters, and employee-size context for companies with postings | Broad job-posting snapshot; company set is limited to employers present in postings. Dataset page lists CC BY-SA 4.0 and references scraper code; this is not a complete company directory and has no audited company financials | Requires separate user approval and provenance review; if approved, include only the company-profile file and retain attribution/share-alike terms |
+| [Fliar Research — Global Startup Funding Rounds 2019–2026](https://github.com/Busineessfree/global-startup-funding) | Pinned sample of 20,227 round events; importer groups it into 11,853 startup recommendation profiles. Source period Jan 2019–Jun 2026; parsed sample rows cover 137 countries and 69 sectors. Fields include name/domain, sector, country/city, founded year, funding stage/date, amount status, investor, news excerpt, article/profile URLs. | CC BY-NC 4.0, attribution Fliar Research / Fliar BI. Source describes this as a fixed 25% hashed company sample of 80,911 events. It is non-commercial; full dataset and updates require provider API access. | Pinned to source commit `225b3e0e84e5ed4a45b5311b20760930cfde9c72`, SHA-256 verified, downloaded locally via `data/download_global_startup_funding.py`; raw CSV excluded from Git. One profile-level recommendation per normalized profile path, with domain/name fallback. Events are kept separate in funding search. Only rows marked `verified` show an amount. |
+| [Kaggle — Indian Startup Funding](https://www.kaggle.com/datasets/sudalairajkumar/indian-startup-funding) | 3,044 event rows, 2015–2020; company, vertical/sub-vertical, city, date, round, amount, investors and remarks. | Kaggle listing says CC0; historic, partial and missing fields. | Existing India dataset. Entity records not already in the global sample remain searchable/recommendable. Events may overlap the global 2019–2020 sample, so source event counts are never called a deduplicated total. |
+| [Kaggle — Forbes Global 2000 Companies 2025](https://www.kaggle.com/datasets/ellimaaac/forbes-the-global-2000-companies-2025) | 2,000 large public companies; financial snapshot and industry. Latest 12 months available 25 Apr 2025. | Kaggle listing says CC0. | Established-public-company comparator only. No multi-year series or comprehensive startup coverage. |
+| [Wikidata Query Service](https://query.wikidata.org/) | 1,275 exact-English-name candidate profile matches to Forbes names; 8,578 dated revenue/profit/assets claims for 417 companies. | Wikidata structured data CC0; community-maintained, sparse, possible name mismatches. | Supplemental profiles and claims; never merged with Forbes financials. Each record links to source. |
 
-## Findings
+## Sources reviewed but not imported
 
-No single inspected candidate covers all Indian and global companies across every industry with comparable company profiles, funding, revenue, profit/loss, and market attributes. The Global 2000 candidate directly covers established large public firms across countries and sectors; the Indian startup dataset separately covers funding activity. Wikidata contributes candidate descriptions and dated financial claims, but it is uneven and community-maintained. Neither combination delivers complete global startup or company coverage.
+| Source | Why it could help | Why it is not currently merged |
+| --- | --- | --- |
+| [Forbes Global 2000 2026 Kaggle copy](https://www.kaggle.com/datasets/ellimaaac/forbes-the-global-2000-companies-2026) | Newer 2,000 public-company snapshot. | Listing points to a separate permissions request; use remains excluded until its terms are clarified. |
+| [Yigit Mete Ozcan accelerator portfolio aggregator](https://github.com/yigitmeteozcan/startups) | README reports 21,352 companies across seven portfolios with descriptions, locations, tags, cohorts, and source. | Repository declares MIT for its project but says to respect each accelerator provider's terms. That does not settle redistribution rights for each underlying portfolio record. No records copied. |
+| [UK Companies House API](https://developer.company-information.service.gov.uk/) | Live UK registered-company information. | Requires API credentials; covers general registered entities and does not identify startups. Not a global startup directory. |
+| [SEC EDGAR APIs](https://www.sec.gov/search-filings/edgar-application-programming-interfaces) | Public submissions and XBRL facts for U.S. filers. | Useful for public-company financial history, not a private/global startup directory. Browser CORS is not supported. Earlier automated retrieval from this environment was refused; no SEC facts are included. |
+| [GLEIF Global LEI Index](https://www.gleif.org/en/about/open-data/) | CC0 global legal-entity reference data and ownership links. | LEIs do not mean “startup”; many entities have no LEI. Adding it to idea search would add legal entities without useful descriptions. |
+| [OpenCorporates self-service API terms](https://opencorporates.com/legal-information/self-service-api-terms-of-service/) | Broad registry aggregation. | API access is limited and third-party distribution is restricted absent the applicable external-distribution license. No API key or license was obtained. |
+| [LinkedIn Job Postings company profile dataset](https://www.kaggle.com/dsv/9200871) | Company descriptions, sector and size context for employers with postings. | Dataset page lists CC BY-SA 4.0 and scraper provenance. Employer coverage is biased and not a startup directory; not imported. |
 
-The 2025 Global 2000 listing reports its snapshot from the latest 12 months available as of April 25, 2025. It supplies broad cross-country large-company coverage and four core financial measures, but not repeated history or detailed business descriptions. Wikidata supplements exact-name candidates and dated claims without merging their values into Forbes measures. The newer 2026 copy is not bundled because its terms point to a Forbes permissions process. The LinkedIn company-profile file could add descriptions and company-size context, but its CC BY-SA 4.0 terms and scraped provenance need the user's approval before use.
+## What “global” means here
 
-## Selection decision
+The global sample contains reported funding events for a subset of funded startups. It is **not** a census of all startups or all countries, and a funding event does not establish that the company remains active. Recommendation context is often text from a funding-news article, not a reviewed company description. The app reports the sample size and offers source links so users can verify details.
 
-Use the CC0 2025 Global 2000 and CC0 Indian Startup Funding file as the core, with exact-name Wikidata as visibly supplemental context. Keep funding and financial facts separate unless entity, currency, and reporting periods match. SEC is a strong future source for U.S. filing history if this network is permitted by SEC. The optional LinkedIn CC BY-SA candidate needs separate user approval.
+No source found in this audit provides complete Indian and global startup profiles, funding, audited revenue/profit, and current operating status under one openly reusable license. Keep these kinds of records separate. A result's similarity to an idea does not establish direct competition, market size, originality, or commercial opportunity.
 
-## References
-
-- Kaggle dataset listings linked in the candidate matrix; downloadable files still need local schema inspection.
-- Kaggle [dataset guidance](https://www.kaggle.com/docs/datasets) for supported files and metadata.
-- Forbes [2025 Global 2000 methodology](https://www.forbes.com/sites/andreamurphy/2025/06/12/how-we-crunch-the-numbers-the-2025-global-2000/) explains the ranking inputs and reporting snapshot.
+See [`data/SOURCES.md`](../data/SOURCES.md) for the in-project source catalog, verified counts, checksum, attribution, and reproduction command.

@@ -10,7 +10,7 @@
 
 ## Training and comparison
 
-The reproducible trainer maps the industry label in the Forbes snapshot and the vertical label in the Indian startup funding file into a broad sector taxonomy. These are weak labels: the program does not manually verify that a particular company's business belongs in the mapped class. The classification feature text uses company/startup names, available Wikidata descriptions and profile industry values, plus startup sub-industry/remarks. Source-level broad labels are the target; rows with fewer than five examples are left out of model fitting and evaluation.
+The reproducible trainer maps the industry label in the Forbes snapshot and the vertical label in the Indian startup funding file into a broad sector taxonomy. These are weak labels: the program does not manually verify that a particular company's business belongs in the mapped class. The classification feature text uses company/startup names, available Wikidata descriptions and profile industry values, plus startup sub-industry/remarks and source-news excerpts from the global funding sample. Global source sectors also become weak target labels; their sector field is excluded from the model text. Source-level broad labels are the target; rows with fewer than five examples are left out of model fitting and evaluation.
 
 The data is divided into 60% training, 20% validation, and a final 20% stratified test set. The comparison includes Multinomial Naive Bayes, Logistic Regression, and Linear SVM. The model with the highest validation macro-F1 is selected; each algorithm is then refit on the full 80% development partition and evaluated on the untouched 20% test partition. The rule baseline is scored on the same final test set. Accuracy gives overall agreement; macro-F1 weights each observed sector equally. Per-class scores and supports are saved in `models/model_metrics.json`.
 
@@ -26,6 +26,7 @@ The recommender vectorizes the idea and each available company/startup record us
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
+python3 data/download_global_startup_funding.py
 python -m ml.train
 python app.py
 ```

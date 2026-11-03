@@ -1,6 +1,6 @@
 # Data files
 
-The raw files in `raw/` are kept as downloaded, with their original field names and values. The application reads them into standardized in-memory records at startup. The Forbes list is enriched with a separate, supplemental Wikidata profile file using exact English company-name labels; that identity match is a candidate and must be checked before relying on it.
+Raw files in `raw/` retain their source field names and values. The Fliar sample is fetched locally by a pinned/checksummed downloader and is omitted from Git because its CC BY-NC license is separate from the project code. The application reads available files into standardized in-memory records at startup. The Forbes list is enriched with a separate, supplemental Wikidata profile file using exact English company-name labels; that identity match is a candidate and must be checked before relying on it.
 
 ## Global public companies
 
@@ -38,6 +38,18 @@ The raw files in `raw/` are kept as downloaded, with their original field names 
 - Coverage: 3,044 historical funding records with startup, vertical/subvertical, city, date, investor, round/type, amount and remarks fields.
 - Period: valid dates span 2 Jan 2015–13 Jan 2020 in this downloaded version (3,036 of 3,044 rows have a parseable date). Amounts are USD when present.
 - Limits: funding events are not revenue, profit, or valuation; dates, categories, names and amounts may be missing or inconsistent; not a current startup directory.
+
+## Global startup funding sample
+
+- Expected local file: `raw/global_startup_funding_sample.csv` (ignored by Git; restored with `python3 data/download_global_startup_funding.py`).
+- Source: [Fliar Research — Global Startup Funding Rounds 2019–2026](https://github.com/Busineessfree/global-startup-funding).
+- License: CC BY-NC 4.0, attribution Fliar Research / Fliar BI; this dataset may be used only for non-commercial purposes under its stated license.
+- Pinned version: source commit `225b3e0e84e5ed4a45b5311b20760930cfde9c72`; SHA-256 `1f1602f2a8266418899457527aec906ab32f8e19b97375c06f673492ee7e03f0`.
+- Coverage: 20,227 funding events, dated Jan 2019–Jun 2026 according to the source; 11,853 profile-level recommendation entities after importer fallback keys. The source calls this a fixed 25% sample of 80,911 events. Parsed data has 137 country values and 69 sector labels.
+- Fields include event ID, company name/domain, location, sector, founded year, date, stage, amount, amount check status, investor, news excerpt, news URL and Fliar profile URL.
+- Amount handling: the dashboard shows a numeric value only when the source marks the event `verified`; unchecked, failed-check, and undisclosed amounts remain unavailable. The sample has 15,951 events with verified amounts.
+- Limits: this is a sample of reported funding events, not all startups or operating companies. News excerpts can describe an announcement rather than the startup's complete product. 42 source events have no profile URL; the importer uses domain/name fallback keys. The full dataset and updates require Fliar API access. It overlaps the India history period, so record counts across sources are not a count of unique global rounds.
+- Rebuild/download with `python3 data/download_global_startup_funding.py`; the script pins the source commit and verifies the checksum before writing.
 
 ## Retrieval and handling
 

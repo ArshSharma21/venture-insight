@@ -11,3 +11,6 @@ coverage/
 .env.*
 !.env.example
 .vscode/
+
+# Retrieved under CC BY-NC; restore with data/download_global_startup_funding.py
+data/raw/global_startup_funding_sample.csv

@@ -24,6 +24,7 @@ RAW = ROOT / "data" / "raw"
 WEB = ROOT / "web"
 WIKIDATA_PATH = ROOT / "data" / "wikidata_company_profiles.json.gz"
 WIKIDATA_FINANCIALS_PATH = ROOT / "data" / "wikidata_financial_facts.json.gz"
+GLOBAL_STARTUP_PATH = RAW / "global_startup_funding_sample.csv"
 STOP = {"the", "and", "for", "with", "from", "that", "this", "into", "your", "our", "are", "was", "you", "can", "all", "how", "what", "who", "its", "their", "about", "business", "company", "companies", "startup", "startups", "idea", "ideas", "market", "platform", "app", "service", "services"}
 
 
@@ -85,6 +86,66 @@ for row in read_csv(RAW / "startup_funding.csv"):
         "remarks": clean_text(row.get("Remarks")), "source": "Indian Startup Funding / Kaggle",
     })
 
+global_startup_funding: list[dict] = []
+if GLOBAL_STARTUP_PATH.exists():
+    for row in read_csv(GLOBAL_STARTUP_PATH):
+        status = clean_text(row.get("amount_status")).lower()
+        try:
+            date_iso = datetime.strptime(clean_text(row.get("announced_date")), "%Y-%m-%d").date().isoformat()
+        except ValueError:
+            date_iso = None
+        global_startup_funding.append({
+            "roundId": clean_text(row.get("round_id")), "name": clean_text(row.get("company_name"), "Unnamed startup"),
+            "domain": clean_text(row.get("company_domain")), "country": clean_text(row.get("country")),
+            "city": clean_text(row.get("city")), "industry": clean_text(row.get("sector"), "Not specified"),
+            "foundedYear": int(number(row.get("founded_year")) or 0) or None,
+            "date": date_iso, "round": clean_text(row.get("stage"), "Not specified"),
+            # Surface an amount only when the source explicitly marks its check as verified.
+            "amount": number(row.get("amount_usd")) if status == "verified" else None,
+            "amountStatus": status or "not specified", "leadInvestor": clean_text(row.get("lead_investor")),
+            "investors": clean_text(row.get("lead_investor"), "Not disclosed"),
+            "investorCount": int(number(row.get("investor_count")) or 0),
+            "newsExcerpt": clean_text(row.get("news_excerpt")), "newsSource": clean_text(row.get("news_source")),
+            "newsUrl": clean_text(row.get("news_url")),
+            "profileUrl": clean_text(row.get("fliar_profile_url")),
+            "location": ", ".join(v for v in (clean_text(row.get("city")), clean_text(row.get("country"))) if v),
+            "source": "Fliar Radar / Global Startup Funding sample (CC BY-NC 4.0)",
+        })
+
+
+def normalized_key(value: str) -> str:
+    return "".join(re.findall(r"[a-z0-9]+", (value or "").casefold()))
+
+
+def global_startup_profiles() -> list[dict]:
+    grouped: dict[str, list[dict]] = defaultdict(list)
+    for row in global_startup_funding:
+        # The source profile path is the best available entity key; domain/name are fallbacks.
+        profile_key = urlparse(row["profileUrl"]).path.rstrip("/").casefold()
+        key = profile_key or row["domain"].casefold() or f"{normalized_key(row['name'])}:{row['country'].casefold()}"
+        grouped[key].append(row)
+    profiles = []
+    for entries in grouped.values():
+        entries.sort(key=lambda r: r["date"] or "", reverse=True)
+        latest = entries[0]
+        excerpts = list(dict.fromkeys(r["newsExcerpt"] for r in entries if r["newsExcerpt"]))[:6]
+        context = " ".join(excerpts)
+        profiles.append({
+            "name": latest["name"], "domain": latest["domain"], "industry": latest["industry"],
+            "location": ", ".join(v for v in (latest["city"], latest["country"]) if v) or "Location not recorded",
+            "country": latest["country"], "foundedYear": latest["foundedYear"], "round": latest["round"],
+            "date": latest["date"], "amount": latest["amount"], "amountStatus": latest["amountStatus"],
+            "leadInvestor": latest["leadInvestor"], "roundCount": len(entries),
+            "contextSnippet": latest["newsExcerpt"], "recommendationText": " ".join((latest["name"], latest["industry"], context)),
+            "modelText": " ".join((latest["name"], context)),
+            "profileUrl": latest["profileUrl"], "sourceUrl": latest["newsUrl"] or latest["profileUrl"], "newsSource": latest["newsSource"],
+            "recordType": "global startup", "source": latest["source"],
+        })
+    return profiles
+
+
+global_startup_companies = global_startup_profiles()
+
 wikidata_profiles: dict[str, dict] = {}
 if WIKIDATA_PATH.exists():
     try:
@@ -131,32 +192,61 @@ def classify_idea(text: str) -> list[dict]:
 
 
 def idea_records() -> list[dict]:
-    """Build a unified retrieval corpus with source fields retained on each record."""
+    """Build established public-company records for the separate comparator results."""
     records = []
-    for item in funding:
-        record = dict(item)
-        record["recordType"] = "startup funding"
-        records.append(record)
     for item in companies:
         record = dict(item)
         record["recordType"] = "public company"
         record["companyProfile"] = wikidata_profiles.get(item["name"].casefold())
         if record["companyProfile"]:
             record["historicalFacts"] = wikidata_financials.get(record["companyProfile"]["wikidataId"], [])
+        record["recommendationText"] = " ".join((record["name"], record["industry"], record["location"], (record["companyProfile"] or {}).get("description", "")))
         records.append(record)
     return records
 
 
-_RETRIEVAL_RECORDS = None
+def india_startup_profiles() -> list[dict]:
+    """Collapse repeated Indian funding events to one startup recommendation."""
+    grouped: dict[str, list[dict]] = defaultdict(list)
+    for event in funding:
+        grouped[normalized_key(event["name"])].append(event)
+    global_india_names = {normalized_key(row["name"]) for row in global_startup_companies if row["country"].casefold() == "india"}
+    result = []
+    for key, events in grouped.items():
+        if not key or key in global_india_names:
+            continue
+        events.sort(key=lambda r: r["date"] or "", reverse=True)
+        latest = events[0]
+        descriptions = list(dict.fromkeys(r["subIndustry"] + " " + r["remarks"] for r in events if r["subIndustry"] or r["remarks"]))[:5]
+        text = " ".join((latest["name"], latest["industry"], " ".join(descriptions)))
+        result.append({
+            "name": latest["name"], "industry": latest["industry"], "subIndustry": latest["subIndustry"],
+            "location": latest["location"] or "India", "country": "India", "date": latest["date"],
+            "round": latest["round"], "amount": latest["amount"], "leadInvestor": latest["investors"],
+            "roundCount": len(events), "contextSnippet": latest["subIndustry"] or latest["remarks"],
+            "recommendationText": text, "recordType": "India startup", "source": "Indian Startup Funding / Kaggle (2015–2020)",
+            "sourceUrl": "https://www.kaggle.com/datasets/sudalairajkumar/indian-startup-funding",
+        })
+    return result
 
 
-def idea_matches(query: str, limit: int = 12) -> list[dict]:
-    """Content-based TF-IDF cosine recommendations, with legacy fallback."""
-    global _RETRIEVAL_RECORDS
+india_startup_companies = india_startup_profiles()
+startup_recommendation_records = global_startup_companies + india_startup_companies
+_PUBLIC_RETRIEVAL_RECORDS = None
+
+
+def public_company_recommendations(query: str, limit: int = 8) -> list[dict]:
+    global _PUBLIC_RETRIEVAL_RECORDS
+    if _PUBLIC_RETRIEVAL_RECORDS is None:
+        _PUBLIC_RETRIEVAL_RECORDS = idea_records()
     if content_recommend:
-        if _RETRIEVAL_RECORDS is None:
-            _RETRIEVAL_RECORDS = idea_records()
-        return content_recommend(query, _RETRIEVAL_RECORDS, limit)
+        return content_recommend(query, _PUBLIC_RETRIEVAL_RECORDS, limit)
+    return _legacy_idea_matches(query, limit)
+
+
+def startup_recommendations(query: str, limit: int = 12) -> list[dict]:
+    if content_recommend:
+        return content_recommend(query, startup_recommendation_records, limit)
     return _legacy_idea_matches(query, limit)
 
 
@@ -248,7 +338,9 @@ def overview() -> dict:
     india_records = sum("india" in c["location"].lower() for c in companies)
     known_amounts = [r["amount"] for r in funding if r["amount"] is not None]
     return {
-        "companyCount": len(companies), "startupRounds": len(funding), "globalCountries": len(countries),
+        "companyCount": len(companies), "startupRounds": len(funding) + len(global_startup_funding),
+        "startupProfiles": len(startup_recommendation_records), "globalFundingRounds": len(global_startup_funding),
+        "globalStartupProfiles": len(global_startup_companies), "globalCountries": len(countries),
         "industries": len(industries), "indiaPublicCompanies": india_records,
         "totalSales": round(sum(c["sales"] or 0 for c in companies), 1),
         "totalProfit": round(sum(c["profit"] or 0 for c in companies), 1),
@@ -293,23 +385,30 @@ class Handler(SimpleHTTPRequestHandler):
             method = params.get("method", ["ml"])[0]
             use_ml = method != "rules" and bool(CLASSIFIER_BUNDLE)
             classifications = ml_classify(query) if use_ml else classify_idea(query)
-            matches = idea_matches(query)
+            startup_matches = startup_recommendations(query)
+            company_matches = public_company_recommendations(query)
             return self.send_json({
                 "query": query, "method": "ml" if use_ml else "rules",
                 "classifierName": CLASSIFIER_BUNDLE["name"] if use_ml else "Keyword rules (baseline)",
                 "classifications": classifications, "ruleBaseline": classify_idea(query),
-                "mlComparison": ml_classify(query), "matches": matches,
+                "mlComparison": ml_classify(query), "startupMatches": startup_matches,
+                "companyMatches": company_matches,
+                "catalog": {"startupProfiles": len(startup_recommendation_records), "globalStartupProfiles": len(global_startup_companies), "globalFundingRounds": len(global_startup_funding), "indiaHistoricalRounds": len(funding), "countries": len({r['country'] for r in global_startup_companies if r['country']})},
                 "recommendationMethod": "TF-IDF cosine similarity" if content_recommend else "Keyword overlap fallback",
                 "modelNote": ("ML sector classifier trained on source taxonomy weak labels; model scores are not commercial-success probabilities." if use_ml else "Keyword rules baseline. Install dependencies and train to enable the ML classifier."),
             })
         if parsed.path == "/api/funding":
             term = params.get("q", [""])[0].lower()
             sector = params.get("industry", [""])[0]
-            rows = [r for r in funding if (not term or term in " ".join(str(v) for v in r.values()).lower()) and (not sector or sector == r["industry"])]
+            scope = params.get("scope", ["all"])[0]
+            india_rows = [{**r, "market": "India", "currency": "USD", "sourceUrl": "https://www.kaggle.com/datasets/sudalairajkumar/indian-startup-funding"} for r in funding]
+            global_rows = [{**r, "market": "Global", "currency": "USD", "remarks": r["newsExcerpt"], "sourceUrl": r["newsUrl"] or r["profileUrl"]} for r in global_startup_funding]
+            rows = (india_rows if scope == "india" else global_rows if scope == "global" else india_rows + global_rows)
+            rows = [r for r in rows if (not term or term in " ".join(str(v) for v in r.values()).lower()) and (not sector or sector == r["industry"])]
             rows.sort(key=lambda r: r["date"] or "", reverse=True)
             page = max(0, int(params.get("page", ["0"])[0] or 0))
             page_size = 50
-            return self.send_json({"rows": rows[page * page_size:(page + 1) * page_size], "total": len(rows), "page": page, "pageSize": page_size, "industries": sorted({r["industry"] for r in funding if r["industry"]})})
+            return self.send_json({"rows": rows[page * page_size:(page + 1) * page_size], "total": len(rows), "page": page, "pageSize": page_size, "scope": scope, "industries": sorted({r["industry"] for r in rows if r["industry"]}), "indiaRounds": len(india_rows), "globalRounds": len(global_rows), "withAmount": sum(r["amount"] is not None for r in rows)})
         return super().do_GET()
 
     def send_json(self, data, status=200):
