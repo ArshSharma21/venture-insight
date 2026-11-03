@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import json
 import math
 import re
@@ -14,6 +15,8 @@ from urllib.parse import parse_qs, urlparse
 ROOT = Path(__file__).resolve().parent
 RAW = ROOT / "data" / "raw"
 WEB = ROOT / "web"
+WIKIDATA_PATH = ROOT / "data" / "wikidata_company_profiles.json.gz"
+WIKIDATA_FINANCIALS_PATH = ROOT / "data" / "wikidata_financial_facts.json.gz"
 STOP = {"the", "and", "for", "with", "from", "that", "this", "into", "your", "our", "are", "was", "you", "can", "all", "how", "what", "who", "its", "their", "about", "business", "company", "companies", "startup", "startups", "idea", "ideas", "market", "platform", "app", "service", "services"}
 
 
@@ -32,6 +35,11 @@ def number(value: str | None) -> float | None:
         return parsed if math.isfinite(parsed) else None
     except ValueError:
         return None
+
+
+def clean_text(value: str | None, fallback: str = "") -> str:
+    value = (value or "").strip()
+    return fallback if value.lower() in {"nan", "none", "null", "n/a", "na", "-"} else value
 
 
 def read_csv(path: Path, delimiter: str | None = None) -> list[dict[str, str]]:
@@ -63,12 +71,30 @@ for row in read_csv(RAW / "startup_funding.csv"):
     except ValueError:
         date_iso = None
     funding.append({
-        "name": (row.get("Startup Name") or "").strip(), "industry": (row.get("Industry Vertical") or "").strip(),
-        "subIndustry": (row.get("SubVertical") or "").strip(), "location": (row.get("City  Location") or "").strip(),
-        "date": date_iso, "investors": (row.get("Investors Name") or "").strip(),
-        "round": (row.get("InvestmentnType") or "").strip(), "amount": amount,
-        "remarks": (row.get("Remarks") or "").strip(), "source": "Indian Startup Funding / Kaggle",
+        "name": clean_text(row.get("Startup Name"), "Unnamed startup"), "industry": clean_text(row.get("Industry Vertical"), "Not specified"),
+        "subIndustry": clean_text(row.get("SubVertical")), "location": clean_text(row.get("City  Location")),
+        "date": date_iso, "investors": clean_text(row.get("Investors Name"), "Not disclosed"),
+        "round": clean_text(row.get("InvestmentnType"), "Not specified"), "amount": amount,
+        "remarks": clean_text(row.get("Remarks")), "source": "Indian Startup Funding / Kaggle",
     })
+
+wikidata_profiles: dict[str, dict] = {}
+if WIKIDATA_PATH.exists():
+    try:
+        with gzip.open(WIKIDATA_PATH, "rt", encoding="utf-8") as source:
+            payload = json.load(source)
+        wikidata_profiles = {p["companyLabel"].casefold(): p for p in payload.get("profiles", [])}
+    except (OSError, json.JSONDecodeError, KeyError):
+        wikidata_profiles = {}
+wikidata_financials: dict[str, list[dict]] = defaultdict(list)
+if WIKIDATA_FINANCIALS_PATH.exists():
+    try:
+        with gzip.open(WIKIDATA_FINANCIALS_PATH, "rt", encoding="utf-8") as source:
+            payload = json.load(source)
+        for fact in payload.get("facts", []):
+            wikidata_financials[fact["wikidataId"]].append(fact)
+    except (OSError, json.JSONDecodeError, KeyError):
+        wikidata_financials = defaultdict(list)
 
 
 def classify_idea(text: str) -> list[dict]:
@@ -77,8 +103,8 @@ def classify_idea(text: str) -> list[dict]:
         "Financial Technology": ["payment", "bank", "credit", "loan", "finance", "fintech", "insurance", "wallet", "invest"],
         "Healthcare": ["health", "medical", "doctor", "clinic", "patient", "diagnosis", "medicine", "pharma"],
         "Education Technology": ["learn", "education", "student", "school", "course", "tutor", "teaching"],
-        "Retail and E-commerce": ["retail", "shop", "commerce", "grocery", "marketplace", "shopping", "delivery"],
-        "Food and Agriculture": ["food", "restaurant", "farm", "agriculture", "crop", "grocery", "supply chain"],
+        "Retail and E-commerce": ["retail", "shop", "commerce", "grocery", "marketplace", "shopping", "delivery", "parlour", "parlor", "gelato"],
+        "Food and Beverage": ["food", "restaurant", "farm", "agriculture", "crop", "grocery", "supply chain", "ice cream", "gelato", "dessert", "parlour", "parlor", "cafe", "bakery", "beverage"],
         "Climate and Energy": ["climate", "energy", "solar", "renewable", "electric", "battery", "carbon", "recycle"],
         "Enterprise Software and AI": ["software", "saas", "artificial intelligence", " ai ", "automation", "data", "cloud", "developer"],
         "Transport and Mobility": ["transport", "mobility", "vehicle", "automotive", "travel", "logistics", "ride"],
@@ -103,26 +129,38 @@ def idea_matches(query: str, limit: int = 12) -> list[dict]:
         return []
     predictions = classify_idea(query)
     labels = {item["label"] for item in predictions}
+    sector_terms = {
+        "Food and Beverage": {"food", "drink", "tobacco", "restaurants", "leisure", "retail", "wholesale"},
+        "Retail and E-commerce": {"retail", "wholesale", "food", "markets"},
+        "Financial Technology": {"banking", "insurance", "financials"},
+        "Healthcare": {"health", "care", "biotechnology", "pharmaceuticals"},
+        "Enterprise Software and AI": {"software", "technology", "semiconductors"},
+        "Transport and Mobility": {"transportation", "automotive"},
+    }
     scored = []
     for item in funding:
         text = " ".join((item["name"], item["industry"], item["subIndustry"], item["remarks"], item["round"]))
         words = set(tokens(text))
         overlap = len(q & words)
-        sector_match = any(label.lower() in (item["industry"] + " " + item["subIndustry"]).lower() for label in labels)
-        score = overlap / max(1, len(q)) + (0.2 if sector_match else 0)
+        sector_text = set(tokens(item["industry"] + " " + item["subIndustry"]))
+        sector_match = any(bool(sector_terms.get(label, set()) & sector_text) for label in labels)
+        score = overlap / max(1, len(q)) + (0.25 if sector_match else 0)
         if score > 0:
-            scored.append((score, item, sorted(q & words)))
+            scored.append((score, item, sorted(q & words), sector_match, overlap / max(1, len(q))))
     for item in companies:
-        words = set(tokens(item["name"] + " " + item["industry"] + " " + item["location"]))
+        profile = wikidata_profiles.get(item["name"].casefold(), {})
+        profile_text = " ".join((profile.get("description", ""), profile.get("industry", "")))
+        words = set(tokens(item["name"] + " " + item["industry"] + " " + item["location"] + " " + profile_text))
         overlap = len(q & words)
-        sector_match = any(any(t in item["industry"].lower() for t in tokens(label)) for label in labels)
-        score = overlap / max(1, len(q)) + (0.2 if sector_match else 0)
+        sector_text = set(tokens(item["industry"]))
+        sector_match = any(bool(sector_terms.get(label, set()) & sector_text) for label in labels)
+        score = overlap / max(1, len(q)) + (0.25 if sector_match else 0)
         if score > 0:
-            scored.append((score, item, sorted(q & words)))
+            scored.append((score, item, sorted(q & words), sector_match, overlap / max(1, len(q))))
     scored.sort(key=lambda hit: (-hit[0], hit[1]["name"]))
     result = []
     seen_startups = set()
-    for score, item, terms in scored:
+    for _rank_score, item, terms, sector_match, text_overlap in scored:
         if len(result) >= limit:
             break
         if "amount" in item:
@@ -132,9 +170,14 @@ def idea_matches(query: str, limit: int = 12) -> list[dict]:
             if key:
                 seen_startups.add(key)
         record = dict(item)
-        record["matchScore"] = round(min(0.99, score), 2)
+        record["matchScore"] = round(text_overlap, 2)
         record["matchedTerms"] = terms
+        record["sectorMatch"] = sector_match
         record["recordType"] = "startup funding" if "amount" in item else "public company"
+        if record["recordType"] == "public company":
+            record["companyProfile"] = wikidata_profiles.get(record["name"].casefold())
+            if record["companyProfile"]:
+                record["historicalFacts"] = wikidata_financials.get(record["companyProfile"]["wikidataId"], [])
         result.append(record)
     return result
 
@@ -185,6 +228,11 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/company":
             name = params.get("name", [""])[0].casefold()
             found = next((r for r in companies if r["name"].casefold() == name), None)
+            if found:
+                found = dict(found)
+                found["companyProfile"] = wikidata_profiles.get(found["name"].casefold())
+                if found["companyProfile"]:
+                    found["historicalFacts"] = wikidata_financials.get(found["companyProfile"]["wikidataId"], [])
             return self.send_json(found or {"error": "Company not found in this source."}, 200 if found else 404)
         if parsed.path == "/api/idea":
             query = params.get("q", [""])[0][:240]

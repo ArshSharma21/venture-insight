@@ -5,9 +5,9 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 ## Current implementation status
 
 - Product scope and staged plan recorded.
-- Two Kaggle datasets downloaded, schema inspected, and provenance documented.
+- Two Kaggle datasets downloaded, schema inspected, and provenance documented; 1,275 exact-label company profile candidates and 8,578 dated financial claims were added from Wikidata.
 - Standard-library Python API and responsive dashboard implemented.
-- Idea exploration uses transparent keyword sector rules and keyword similarity. This is a prototype research aid, not a validated predictive model.
+- Company profiles show sourced financial metrics plus separately labeled profile and dated-claim enrichment when available. Idea exploration uses transparent keyword/sector matching; this is a prototype research aid, not a validated predictive model.
 - Localhost startup command is `python3 app.py` and the dashboard URL is `http://127.0.0.1:8000`.
 - Local browser review completed for the overview, idea explorer, and paginated company explorer.
 - Full source, raw datasets, dashboard, and documentation are synced to the private repository.
@@ -121,6 +121,6 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 - Initial market: India and global markets.
 - Initial industry coverage: all industries.
 - Framework: Python standard library API and static HTML/CSS/JavaScript.
-- Data sources: Forbes Global 2000 (2025 snapshot) and Indian Startup Funding (2015–2020).
+- Data sources: Forbes Global 2000 (2025 snapshot), Indian Startup Funding (2015–2020), and supplemental Wikidata profiles/dated facts.
 - Syllabus mapping: excluded from current delivery at the user's direction.
 - Initial repository state: no dataset or application code existed in the workspace.
