@@ -48,7 +48,7 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 
 ## Phase 4 — Exploratory analysis and data science
 
-**Goal:** implement syllabus-aligned analyses using suitable labels and features.
+**Goal:** implement analyses supported by the selected data and project brief.
 
 - Perform exploratory data analysis and visualizations.
 - Establish clear prediction targets before training classifiers or regressors.
