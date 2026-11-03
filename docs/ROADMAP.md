@@ -27,7 +27,7 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 
 **Goal:** choose data that can support the planned features.
 
-- Identify candidate startup, company, financial, market, or review datasets.
+- Identify candidate startup, company, and financial datasets on Kaggle/open data platforms.
 - Inspect actual files, fields, dates, geography, completeness, and duplicate patterns.
 - Record publisher, dataset URL, license/terms, retrieval date, and known limitations.
 - Select a dataset only after confirming the fields support the required analyses.
@@ -51,7 +51,9 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 **Goal:** implement analyses supported by the selected data and project brief.
 
 - Perform exploratory data analysis and visualizations.
-- Establish clear prediction targets before training classifiers or regressors.
+- Classify company or idea sectors only with supported labels and evaluate the model.
+- Recommend similar companies from idea text and available business/sector fields; explain matches.
+- Establish clear prediction targets before training regressors.
 - Compare appropriate baselines and candidate models; report evaluation metrics.
 - Apply clustering and content-based similarity only to meaningful, available features.
 - Explain limitations and avoid interpreting association as causation.
