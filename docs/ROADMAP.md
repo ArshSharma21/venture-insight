@@ -10,7 +10,7 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 - Idea exploration uses transparent keyword sector rules and keyword similarity. This is a prototype research aid, not a validated predictive model.
 - Localhost startup command is `python3 app.py` and the dashboard URL is `http://127.0.0.1:8000`.
 - Local browser review completed for the overview, idea explorer, and paginated company explorer.
-- Private repository sync is the final handoff step.
+- Full source, raw datasets, dashboard, and documentation are synced to the private repository.
 
 ## Phase 0 — Project setup
 
