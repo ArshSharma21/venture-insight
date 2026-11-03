@@ -6,7 +6,7 @@
 
 Help someone investigate a startup idea by showing what similar businesses already exist, what those companies do, what evidence is available about their funding and financial performance, and what related areas merit further research.
 
-The intended product is a searchable web dashboard for India and global markets, across industries. The source data will determine the actual coverage. The application must not imply that it contains every company or every industry where its sources are incomplete.
+The intended product is a searchable web dashboard for India and global markets, across industries. It must cover both startups and established large companies. The source data will determine actual coverage; the application must not imply that it contains every company or every industry where its sources are incomplete.
 
 ## User journey
 
@@ -21,6 +21,7 @@ The intended product is a searchable web dashboard for India and global markets,
 Use these familiar business and finance terms in labels and documentation:
 
 - **Company overview:** name, business description/product, sector and sub-sector, geography, founding date, and source.
+- **Large public-company profile:** rank/list membership, country, industry, sales, profit/loss, total assets, and market value where present in the chosen snapshot.
 - **Funding history:** dated investment rounds, amount, currency, investment type, and named investors where available. Keep funding separate from operating performance.
 - **Financial performance:** revenue/sales, gross profit, operating income, net income or loss, expenses, assets/liabilities, and reporting period/currency when a source provides them.
 - **Business context:** company size, public/private status, market listing/ticker, and comparable companies where available.
@@ -47,6 +48,8 @@ Do not infer a private company's revenue or profit from its fundraising. If a fi
 ## Scope and limits
 
 - Initial target scope: India and global markets; all industries.
+- Include startup activity as well as established global public companies.
+- A broad large-company snapshot can provide one-year financial fields, but that does not create a historical time series or a full business description.
 - Actual searchable coverage will be limited to the selected datasets and must be described accurately.
 - Public startup datasets often contain funding rounds rather than audited revenue/profit. Financial profiles require separate financial-statement sources and may cover listed companies only.
 - No user account, idea storage, paid market feed, or external API key is required for the first local demo unless a source decision later requires one.
