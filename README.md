@@ -24,7 +24,7 @@ python -m ml.train
 python app.py
 ```
 
-Training compares Multinomial Naive Bayes, Logistic Regression, and Linear SVM. It selects the highest held-out macro-F1 model, saves it under `models/`, and exposes evaluation metrics in the Idea Explorer. Model artifacts are generated locally and are not committed. Without training, the dashboard visibly falls back to the keyword baseline.
+Training compares Multinomial Naive Bayes, Logistic Regression, and Linear SVM. It selects the model with the highest validation macro-F1, saves it under `models/`, and exposes evaluation metrics in the Idea Explorer. Model artifacts are generated locally and are not committed. Without training, the dashboard visibly falls back to the keyword baseline.
 
 ## Features
 
@@ -46,7 +46,7 @@ The 2026 Forbes Kaggle dataset was reviewed but is not included because its page
 
 ## Data science methods and boundaries
 
-The classifier maps Forbes industry and startup funding vertical values into broad project sectors. These mapped source categories are **weak labels**, not manually verified labels. Features use company/startup names and available descriptions, sub-industry text, or remarks. A fixed random seed and stratified 20% holdout make the model comparison reproducible. Accuracy and macro-F1 describe agreement with the weak labels on that holdout; they do not measure whether an idea is correctly classified in reality. The interface distinguishes this fitted classifier from the readable keyword-rule baseline.
+The classifier maps Forbes industry and startup funding vertical values into broad project sectors. These mapped source categories are **weak labels**, not manually verified labels. Features use company/startup names and available descriptions, sub-industry text, or remarks. A fixed random seed and stratified 60/20/20 train/validation/test split make model selection and final evaluation reproducible. Accuracy and macro-F1 describe agreement with the weak labels on the untouched test partition; they do not measure whether an idea is correctly classified in reality. The interface distinguishes this fitted classifier from the readable keyword-rule baseline.
 
 Recommendations use TF-IDF vectorization and cosine similarity to retrieve records whose available text resembles the user's description. This retrieval method is separate from classification. It does not infer market size, recommend investments, or establish direct competitors. See [`docs/ML_METHODOLOGY.md`](docs/ML_METHODOLOGY.md).
 

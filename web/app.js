@@ -125,7 +125,7 @@ async function loadModelComparison() {
       return;
     }
     const score = x => x == null ? '—' : `${(x * 100).toFixed(1)}%`;
-    panel.innerHTML = `<div class="panel-head"><div><h3>Classifier comparison</h3><p>Held-out ${metrics.holdout.records} records · selected by macro-F1</p></div><span class="result-count">Active: ${esc(activeModel)}</span></div><div class="model-rows">${rows.map(row => `<div class="model-row"><strong>${esc(row.name)}</strong><span>Accuracy ${score(row.accuracy)}</span><span>Macro-F1 ${score(row.macroF1)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, Math.min(100, (row.macroF1 || row.accuracy || 0) * 100))}%"></div></div></div>`).join('')}</div><p class="model-caveat">${esc(metrics.caveat || '')} Corpus: ${metrics.corpus.records} records; labels are mapped from source industry categories.</p>`;
+    panel.innerHTML = `<div class="panel-head"><div><h3>Classifier comparison</h3><p>Final test: ${metrics.holdout.records} records · winner selected on validation macro-F1</p></div><span class="result-count">Active: ${esc(activeModel)}</span></div><div class="model-rows">${rows.map(row => `<div class="model-row"><strong>${esc(row.name)}</strong><span>Accuracy ${score(row.accuracy)}</span><span>Macro-F1 ${score(row.macroF1)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, Math.min(100, (row.macroF1 || row.accuracy || 0) * 100))}%"></div></div></div>`).join('')}</div><p class="model-caveat">${esc(metrics.caveat || '')} Corpus: ${metrics.corpus.records} records; labels are mapped from source industry categories.</p>`;
   } catch (e) { $('#model-comparison').innerHTML = `<div class="notice">Could not load classifier metrics: ${esc(e.message)}</div>`; }
 }
 init();
