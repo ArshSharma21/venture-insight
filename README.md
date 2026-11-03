@@ -6,7 +6,7 @@ The project brief calls for a working local web application backed by reproducib
 
 ## Project status
 
-**Stage 1 — product brief captured; dataset selection pending.** The user wants an idea search, company research, financial analysis, visualization, classification, and recommendation workflow, using Kaggle/open data where suitable. The user asked to proceed without syllabus mapping. No dataset has yet been downloaded or integrated.
+**Stage 1 — product brief captured; data access pending.** The user wants startup discovery alongside broad coverage of established large companies, with company research, financial analysis, visualization, classification, and recommendations. A 2,000-company global public-company Kaggle dataset has been inspected; its download requires Kaggle sign-in. No dataset has yet been integrated.
 
 ## Planned development pipeline
 
