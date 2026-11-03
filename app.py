@@ -297,7 +297,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json({
                 "query": query, "method": "ml" if use_ml else "rules",
                 "classifierName": CLASSIFIER_BUNDLE["name"] if use_ml else "Keyword rules (baseline)",
-                "classifications": classifications, "ruleBaseline": classify_idea(query), "matches": matches,
+                "classifications": classifications, "ruleBaseline": classify_idea(query),
+                "mlComparison": ml_classify(query), "matches": matches,
                 "recommendationMethod": "TF-IDF cosine similarity" if content_recommend else "Keyword overlap fallback",
                 "modelNote": ("ML sector classifier trained on source taxonomy weak labels; model scores are not commercial-success probabilities." if use_ml else "Keyword rules baseline. Install dependencies and train to enable the ML classifier."),
             })
