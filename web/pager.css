@@ -1,0 +1,1 @@
+.pager{display:flex;align-items:center;justify-content:flex-end;gap:7px;padding:12px 3px;color:#8c9795;font-size:9px}.pager button{border:1px solid var(--line);background:#fff;color:#54706a;border-radius:5px;padding:6px 10px;font:600 9px 'DM Sans';cursor:pointer}.pager button:disabled{opacity:.4;cursor:default}

@@ -2,6 +2,16 @@
 
 This roadmap is staged so each phase produces a reviewable result before the next begins. The user asked to complete the project from the shared brief without waiting for syllabus material; syllabus mapping is outside this delivery.
 
+## Current implementation status
+
+- Product scope and staged plan recorded.
+- Two Kaggle datasets downloaded, schema inspected, and provenance documented.
+- Standard-library Python API and responsive dashboard implemented.
+- Idea exploration uses transparent keyword sector rules and keyword similarity. This is a prototype research aid, not a validated predictive model.
+- Localhost startup command is `python3 app.py` and the dashboard URL is `http://127.0.0.1:8000`.
+- Local browser review completed for the overview, idea explorer, and paginated company explorer.
+- Private repository sync is the final handoff step.
+
 ## Phase 0 — Project setup
 
 **Goal:** establish the repository and record the project brief.
@@ -25,18 +35,18 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 
 ## Phase 2 — Dataset research and selection
 
-**Goal:** choose data that can support the planned features.
+**Status: complete for the first local release.** The selected sources support an initial, clearly bounded release.
 
 - Identify candidate startup, company, and financial datasets on Kaggle/open data platforms.
 - Inspect actual files, fields, dates, geography, completeness, and duplicate patterns.
 - Record publisher, dataset URL, license/terms, retrieval date, and known limitations.
 - Select a dataset only after confirming the fields support the required analyses.
 
-**Gate:** documented source decision and sample schema; no unsupported financial claims.
+**Gate met:** source pages and downloaded schemas/limits are recorded in `data/README.md`.
 
 ## Phase 3 — Data engineering
 
-**Goal:** make a repeatable, auditable dataset preparation process.
+**Status: implemented.** The application reads source-specific raw files and normalizes fields in memory.
 
 - Preserve source data separately from processed data when terms allow.
 - Normalize column names and types; standardize company names and categories.
@@ -44,11 +54,11 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 - Validate row counts, ranges, key fields, and transformation output.
 - Generate a data dictionary and source lineage notes.
 
-**Gate:** reproducible clean dataset with documented quality limitations.
+**Gate met for demo:** units, null handling and source boundaries are explicit. A separate persisted clean-data export can be added in a later iteration.
 
 ## Phase 4 — Exploratory analysis and data science
 
-**Goal:** implement analyses supported by the selected data and project brief.
+**Status: prototype implemented.** Dashboard aggregates and charts are source-backed; idea classification and similarity are transparent keyword methods.
 
 - Perform exploratory data analysis and visualizations.
 - Classify company or idea sectors only with supported labels and evaluate the model.
@@ -58,21 +68,21 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 - Apply clustering and content-based similarity only to meaningful, available features.
 - Explain limitations and avoid interpreting association as causation.
 
-**Gate:** documented analysis and model evaluation based on the selected data.
+**Gate:** initial analyses are described with limitations. A trained predictive model and held-out evaluation remain future work because the available input data does not contain rich business descriptions or validated idea-success labels.
 
 ## Phase 5 — API and storage
 
-**Goal:** serve validated company records and analytical results to the application.
+**Status: implemented.** `app.py` serves JSON endpoints and static files using Python's standard library.
 
 - Select lightweight local storage after reviewing schema and data size.
 - Define endpoints for search, company detail, comparisons, aggregate analytics, and recommendations.
 - Return data provenance, missing values, and prediction metadata with results.
 
-**Gate:** API responses are backed by the processed dataset and documented contracts.
+**Gate met for demo:** company, funding, overview, and idea endpoints read the checked-in source files.
 
 ## Phase 6 — Web dashboard
 
-**Goal:** build an understandable research workspace.
+**Status: implemented.** `web/` contains the responsive dashboard, company explorer, profile details, funding browser, charts, and idea explorer.
 
 - Idea search and filters.
 - Company explorer and profile.
@@ -80,18 +90,18 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 - Market visualizations and recommendations tied to actual records.
 - Clear labels for unavailable, estimated, and predicted values.
 
-**Gate:** user journeys work against the local API without placeholder business claims.
+**Gate met:** core pages loaded in the local browser and the company explorer pagination was reviewed.
 
 ## Phase 7 — Integration and validation
 
-**Goal:** check the full path from source data to the visible dashboard.
+**Goal:** review the full path from source data to the visible dashboard.
 
 - Trace displayed values to source records or model outputs.
 - Validate search, filters, comparisons, empty states, and error handling.
 - Review model metrics and descriptions for accuracy.
 - Document known gaps and reproducible setup steps.
 
-**Gate:** end-to-end application is ready for local demonstration.
+**Gate met for demo:** the API and dashboard were manually exercised in the browser; this is not a formal automated test suite.
 
 ## Phase 8 — Localhost demonstration
 
@@ -99,7 +109,7 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 
 - Provide setup and run commands.
 - Start backend and frontend services.
-- Verify the local URL and core demonstration path.
+- Open and verify the local URL and core demonstration path.
 - Prepare a short walkthrough using the selected data.
 
 **Final result:** a working localhost showcase plus reproducible project documentation.
@@ -110,6 +120,7 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 - Repository: `ArshSharma21/venture-insight` (private).
 - Initial market: India and global markets.
 - Initial industry coverage: all industries.
-- Data source and framework: not yet confirmed.
+- Framework: Python standard library API and static HTML/CSS/JavaScript.
+- Data sources: Forbes Global 2000 (2025 snapshot) and Indian Startup Funding (2015–2020).
 - Syllabus mapping: excluded from current delivery at the user's direction.
 - Initial repository state: no dataset or application code existed in the workspace.

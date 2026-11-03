@@ -1,43 +1,32 @@
 # Venture Insight
 
-Venture Insight is a startup idea research dashboard. A user enters an idea, finds similar companies and market activity, explores company profiles, compares available financials, and sees data-backed recommendations.
+Venture Insight is a local market research dashboard for exploring startup ideas, finding related companies, and comparing reported business and funding data. Its first release covers a broad global snapshot of large public companies and a separate historical dataset of Indian startup funding rounds.
 
-The project brief calls for a working local web application backed by reproducible data preparation and data science workflows. Company financials and predictions must be traceable to their sources; unavailable figures will be shown as unavailable instead of being invented. Funding raised is a financing event, not revenue or profit. Private-company financials may not be publicly available.
+## Start the local dashboard
 
-## Project status
+Requires Python 3.9 or newer. The application uses only the Python standard library.
 
-**Stage 1 — product brief captured; data access pending.** The user wants startup discovery alongside broad coverage of established large companies, with company research, financial analysis, visualization, classification, and recommendations. A 2,000-company global public-company Kaggle dataset has been inspected; its download requires Kaggle sign-in. No dataset has yet been integrated.
+```bash
+python3 app.py
+```
 
-## Planned development pipeline
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Stop the server with `Ctrl+C`.
 
-1. **Confirm requirements** — use the shared brief and the user's confirmed scope: India and global markets, all industries; do not block on syllabus material.
-2. **Select data sources** — review public datasets, schemas, licenses, coverage, and any contact/API requirements before integrating them.
-3. **Build the data pipeline** — preserve source data, document provenance, clean and standardize records, and validate processed output.
-4. **Develop the data science layer** — exploratory analysis, visualization, supervised models, clustering, and content-based recommendations where supported by the selected data.
-5. **Build the API and storage** — expose company search, profiles, comparisons, analytics, and model results through a Python service.
-6. **Build the web dashboard** — implement idea search, company explorer, company profiles, competitor comparisons, market analytics, and recommendations.
-7. **Integrate and validate** — connect real processed data and model outputs to the interface; check source attribution and missing-data behavior.
-8. **Run locally** — provide reproducible setup instructions and demonstrate the complete application on localhost.
+## Features
 
-See [`docs/PRODUCT_REQUIREMENTS.md`](docs/PRODUCT_REQUIREMENTS.md) for the user journeys and data requirements, [`docs/ROADMAP.md`](docs/ROADMAP.md) for phase gates, and [`docs/DATA_SOURCE_RESEARCH.md`](docs/DATA_SOURCE_RESEARCH.md) for candidate datasets and their limits.
+- Search and filter 2,000 public companies by name, industry, and country.
+- View a company profile with rank, location, industry, sales, profit/loss, assets, market value, and calculated profit margin.
+- Explore a startup idea using transparent keyword-based sector classification and keyword similarity recommendations across the available records.
+- Search 3,044 historical Indian startup funding records by company, investor, location, or sector.
+- View an industry sales chart and major-company rankings.
+- See source and period labels with data limitations throughout the interface.
 
-## Proposed technical direction
+## Sources and limits
 
-The shared brief proposed Python for data processing and the API, with a web frontend. The framework will be chosen after confirming the actual data and local runtime. No dependencies have been installed.
+The global company source is the [Forbes Global 2000 2025 Kaggle dataset](https://www.kaggle.com/datasets/ellimaaac/forbes-the-global-2000-companies-2025), listed as CC0. It contains a latest-12-month financial snapshot available as of 25 April 2025; it is not a current live feed or a multi-year trend. The India startup source is [Indian Startup Funding on Kaggle](https://www.kaggle.com/datasets/sudalairajkumar/indian-startup-funding), listed as CC0; its downloaded records span 2015–2020 and show fundraising events, not operating results. See [`data/README.md`](data/README.md) and [`docs/DATA_SOURCE_RESEARCH.md`](docs/DATA_SOURCE_RESEARCH.md) for provenance and limitations.
 
-## Data integrity rules
+The 2026 Forbes Kaggle dataset was reviewed but is not included because its page specifies a separate license/permissions process. This repository keeps the redistributable 2025 source. The available sources do not provide complete descriptions or financial histories for every company, especially private startups. The interface labels fields absent from its sources as unavailable rather than filling them with guesses.
 
-- Keep a source and retrieval note for each dataset.
-- Do not treat funding raised as revenue.
-- Do not invent unavailable company financials.
-- Distinguish observed values, estimates, and model outputs in both the API and dashboard.
-- Only claim predictive performance after evaluating the model on appropriate held-out data.
-- Review dataset terms and website rules before collection or redistribution.
+## Project pipeline
 
-## Local development
-
-Local run commands will be added after the application stack and dependencies are selected and implemented.
-
-## License
-
-No software license has been selected. The repository remains private while the project scope and data sources are being established.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the staged delivery plan and [`docs/PRODUCT_REQUIREMENTS.md`](docs/PRODUCT_REQUIREMENTS.md) for the product scope. Syllabus mapping is excluded at the user's direction.
