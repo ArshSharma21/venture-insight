@@ -1,6 +1,6 @@
 # Venture Insight — Development Roadmap
 
-This roadmap is staged so each phase produces a reviewable result before the next begins. The order may be adjusted after inspecting the actual syllabus, selected data, and available development environment.
+This roadmap is staged so each phase produces a reviewable result before the next begins. The user asked to complete the project from the shared brief without waiting for syllabus material; syllabus mapping is outside this delivery.
 
 ## Phase 0 — Project setup
 
@@ -12,16 +12,16 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 
 **Gate:** repository and project baseline are visible locally and on GitHub.
 
-## Phase 1 — Requirements and syllabus verification
+## Phase 1 — Requirements capture
 
-**Goal:** turn the brief and course syllabus into a checked list of requirements.
+**Goal:** turn the shared brief and confirmed scope into a checked list of requirements.
 
 - Confirm target market, intended user, and initial industry coverage.
-- Inspect the original syllabus material and map each required topic to an implementation or documented analysis.
+- Proceed from the shared brief without waiting for syllabus material.
 - Define the smallest useful localhost demonstration.
 - Record out-of-scope features and constraints.
 
-**Gate:** user-reviewed scope and verified syllabus mapping.
+**Gate:** user-reviewed scope and a defined localhost demonstration.
 
 ## Phase 2 — Dataset research and selection
 
@@ -109,5 +109,5 @@ This roadmap is staged so each phase produces a reviewable result before the nex
 - Initial market: India and global markets.
 - Initial industry coverage: all industries.
 - Data source and framework: not yet confirmed.
-- Exact syllabus: requested from the user; mapping remains provisional until received.
+- Syllabus mapping: excluded from current delivery at the user's direction.
 - Initial repository state: no dataset or application code existed in the workspace.
