@@ -21,7 +21,7 @@ from ml.pipeline import MODEL_PATH, METRICS_PATH, build_corpus  # noqa: E402
 
 
 def main() -> None:
-    rows = build_corpus(app.companies, app.funding, app.wikidata_profiles, app.global_startup_companies)
+    rows = build_corpus(app.companies, app.india_startup_companies, app.wikidata_profiles, app.global_startup_companies)
     counts = Counter(row["label"] for row in rows)
     # Very small categories cannot support a stratified holdout and useful evaluation.
     rows = [row for row in rows if counts[row["label"]] >= 5]

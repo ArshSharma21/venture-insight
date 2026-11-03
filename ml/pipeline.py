@@ -42,7 +42,7 @@ def canonical_sector(value: str) -> str:
     return best[1] if best[0] else "Other / Unclassified"
 
 
-def build_corpus(companies: list[dict], funding: list[dict], profiles: dict[str, dict], global_startups: list[dict] | None = None) -> list[dict]:
+def build_corpus(companies: list[dict], india_startups: list[dict], profiles: dict[str, dict], global_startups: list[dict] | None = None) -> list[dict]:
     """Build one document per normalized company name; exclude label fields from text.
 
     Cross-source name deduplication reduces train/test leakage when the same entity
@@ -66,7 +66,7 @@ def build_corpus(companies: list[dict], funding: list[dict], profiles: dict[str,
         text = " ".join(filter(None, (company.get("name"), description, profile.get("industry", ""))))
         if text.strip():
             rows.append({"text": text, "label": label, "name": company["name"], "source": company.get("source", "public company")})
-    for startup in funding:
+    for startup in india_startups:
         key = name_key(startup.get("name", ""))
         if not key or key in seen:
             continue
