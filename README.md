@@ -1,12 +1,12 @@
 # Venture Insight
 
-Venture Insight is a student data science project for exploring startup ideas, researching existing companies, comparing competitors, and surfacing potential market opportunities.
+Venture Insight is a startup idea research dashboard. A user enters an idea, finds similar companies and market activity, explores company profiles, compares available financials, and sees data-backed recommendations.
 
-The project brief calls for a working local web application backed by reproducible data preparation and data science workflows. Company financials and predictions must be traceable to their sources; unavailable figures will be shown as unavailable instead of being invented.
+The project brief calls for a working local web application backed by reproducible data preparation and data science workflows. Company financials and predictions must be traceable to their sources; unavailable figures will be shown as unavailable instead of being invented. Funding raised is a financing event, not revenue or profit. Private-company financials may not be publicly available.
 
 ## Project status
 
-**Stage 1 — requirements captured; source choice pending.** The current workspace began empty. This repository starts from the requirements in the shared project brief; it does not yet contain an approved dataset or a running application. The user asked to proceed without waiting for syllabus material, so syllabus mapping is not a delivery gate.
+**Stage 1 — product brief captured; dataset selection pending.** The user wants an idea search, company research, financial analysis, visualization, classification, and recommendation workflow, using Kaggle/open data where suitable. The user asked to proceed without syllabus mapping. No dataset has yet been downloaded or integrated.
 
 ## Planned development pipeline
 
@@ -19,11 +19,11 @@ The project brief calls for a working local web application backed by reproducib
 7. **Integrate and validate** — connect real processed data and model outputs to the interface; check source attribution and missing-data behavior.
 8. **Run locally** — provide reproducible setup instructions and demonstrate the complete application on localhost.
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for phase gates and [`docs/DATA_SOURCE_RESEARCH.md`](docs/DATA_SOURCE_RESEARCH.md) for source candidates, findings, and limits.
+See [`docs/PRODUCT_REQUIREMENTS.md`](docs/PRODUCT_REQUIREMENTS.md) for the user journeys and data requirements, [`docs/ROADMAP.md`](docs/ROADMAP.md) for phase gates, and [`docs/DATA_SOURCE_RESEARCH.md`](docs/DATA_SOURCE_RESEARCH.md) for candidate datasets and their limits.
 
 ## Proposed technical direction
 
-The shared brief proposed Python for data processing and the API, with a web frontend. The exact framework and dependency versions will be selected after the source path is approved. No dependencies have been installed.
+The shared brief proposed Python for data processing and the API, with a web frontend. The framework will be chosen after confirming the actual data and local runtime. No dependencies have been installed.
 
 ## Data integrity rules
 
