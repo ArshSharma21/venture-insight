@@ -6,12 +6,12 @@ The project brief calls for a working local web application backed by reproducib
 
 ## Project status
 
-**Stage 0 — repository and plan established.** The current workspace began empty. This repository starts from the requirements in the shared project brief; it does not yet contain a validated dataset or a running application.
+**Stage 1 — requirements captured; source choice pending.** The current workspace began empty. This repository starts from the requirements in the shared project brief; it does not yet contain an approved dataset or a running application. The user asked to proceed without waiting for syllabus material, so syllabus mapping is not a delivery gate.
 
 ## Planned development pipeline
 
-1. **Confirm requirements and syllabus** — validate project scope, required course topics, and demonstration needs.
-2. **Inspect data sources** — find candidate public datasets, review their schemas, licenses, and coverage, then select a source before downloading or integrating it.
+1. **Confirm requirements** — use the shared brief and the user's confirmed scope: India and global markets, all industries; do not block on syllabus material.
+2. **Select data sources** — review public datasets, schemas, licenses, coverage, and any contact/API requirements before integrating them.
 3. **Build the data pipeline** — preserve source data, document provenance, clean and standardize records, and validate processed output.
 4. **Develop the data science layer** — exploratory analysis, visualization, supervised models, clustering, and content-based recommendations where supported by the selected data.
 5. **Build the API and storage** — expose company search, profiles, comparisons, analytics, and model results through a Python service.
@@ -19,11 +19,11 @@ The project brief calls for a working local web application backed by reproducib
 7. **Integrate and validate** — connect real processed data and model outputs to the interface; check source attribution and missing-data behavior.
 8. **Run locally** — provide reproducible setup instructions and demonstrate the complete application on localhost.
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for phase gates, [`docs/SYLLABUS_MAPPING.md`](docs/SYLLABUS_MAPPING.md) for the provisional course-topic mapping, and [`docs/DATA_SOURCE_RESEARCH.md`](docs/DATA_SOURCE_RESEARCH.md) for initial source candidates and limits.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for phase gates and [`docs/DATA_SOURCE_RESEARCH.md`](docs/DATA_SOURCE_RESEARCH.md) for source candidates, findings, and limits.
 
 ## Proposed technical direction
 
-The shared brief proposed Python for data processing and the API, with a web frontend. The exact framework and dependency versions will be selected after environment and syllabus requirements are confirmed. No dependencies have been installed yet.
+The shared brief proposed Python for data processing and the API, with a web frontend. The exact framework and dependency versions will be selected after the source path is approved. No dependencies have been installed.
 
 ## Data integrity rules
 
